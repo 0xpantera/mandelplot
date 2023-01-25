@@ -24,7 +24,15 @@ fn escape_time(c: Complex<f64>, limit: usize) -> Option<usize> {
     None
 }
 
-
+/// Parse the string `s` as a coordinate pair, like `"400x600"` or `"1.0,0.5"`.
+///
+/// Specifically, `s` should have the form <left><sep><right>, where <sep> is
+/// the character given by the `separator` argument, and <left> and <right> are
+/// both strings that can be parsed by `T::from_str`. `separator` must be an
+/// ASCII character.
+///
+/// If `s` has the proper form, return `Some<(x, y)>`. If it doesn't parse 
+/// correctly, return `None`.
 fn parse_pair<T: FromStr>(s: &str, sep: char) -> Option<(T, T)> {
     match s.find(sep) {
         None => None,
@@ -37,12 +45,36 @@ fn parse_pair<T: FromStr>(s: &str, sep: char) -> Option<(T, T)> {
     }
 }
 
+/// Parse a pair of floating-point numbers separated by a comma as a complex
+/// number.
 fn parse_complex(s: &str) -> Option<Complex<f64>> {
     match parse_pair(s, ',') {
         Some((re, im)) => Some(Complex { re, im }),
         None => None,
     }
 }
+
+
+/// Given the row and column of a pixel in the output image, return the
+/// corresponding point on the complex plane.
+///
+/// `bounds` is a pair giving the width and height of the image in pixels.
+/// `pixel` is a (column, row) pair indicating a particular pixel in that image.
+/// The `upper_left` and `lower_right` parameters are points on the complex
+/// plane designating the area our image covers.
+fn pixel_to_point(bounds: (usize, usize),
+                  pixel: (usize, usize),
+                  upper_left: Complex<f64>,
+                  lower_right: Complex<f64>)
+    -> Complex<f64> {
+        let (width, height) = (lower_right.re - upper_left.re,
+                               upper_left.im - lower_right.im);
+
+        Complex {
+            re: upper_left.re + pixel.0 as f64 * width / bounds.0 as f64,
+            im: upper_left.im - pixel.1 as f64 * height / bounds.1 as f64
+        }
+    }
 
 
 #[test]
